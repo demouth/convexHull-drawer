@@ -19,6 +19,9 @@ type Plot struct {
 	isConvex bool
 	id       int
 	r        int
+
+	VX float64
+	VY float64
 }
 
 var (
@@ -46,7 +49,8 @@ func (p *Plot) Update() error {
 }
 
 func (p *Plot) Draw(screen *ebiten.Image) {
-	vector.DrawFilledCircle(screen, float32(p.X()), float32(p.Y()), float32(p.r), p.c, true)
+	w, h := screen.Size()
+	vector.DrawFilledCircle(screen, float32(p.X()+w/2), float32(p.Y()+h/2), float32(p.r), p.c, true)
 }
 
 func (p *Plot) near(x, y int) bool {

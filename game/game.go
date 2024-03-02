@@ -3,6 +3,7 @@ package game
 import (
 	"fmt"
 	"image/color"
+	"math/rand"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -39,17 +40,35 @@ func (g *Game) DrawConvexHull(screen *ebiten.Image) {
 		return
 	}
 	for i := 0; i < len(g.convexHull)-1; i++ {
-		vector.StrokeLine(screen, float32(g.convexHull[i].X()), float32(g.convexHull[i].Y()), float32(g.convexHull[i+1].X()), float32(g.convexHull[i+1].Y()), 1, color.RGBA{0, 0, 0, 255}, true)
+		vector.StrokeLine(
+			screen,
+			float32(g.convexHull[i].X()+ScreenWidth/2),
+			float32(g.convexHull[i].Y()+ScreenHeight/2),
+			float32(g.convexHull[i+1].X()+ScreenWidth/2),
+			float32(g.convexHull[i+1].Y()+ScreenHeight/2),
+			1,
+			color.RGBA{0, 0, 0, 255},
+			true,
+		)
 	}
 
-	vector.StrokeLine(screen, float32(g.convexHull[len(g.convexHull)-1].X()), float32(g.convexHull[len(g.convexHull)-1].Y()), float32(g.convexHull[0].X()), float32(g.convexHull[0].Y()), 1, color.RGBA{0, 0, 0, 255}, true)
+	vector.StrokeLine(
+		screen,
+		float32(g.convexHull[len(g.convexHull)-1].X()+ScreenWidth/2),
+		float32(g.convexHull[len(g.convexHull)-1].Y()+ScreenHeight/2),
+		float32(g.convexHull[0].X()+ScreenWidth/2),
+		float32(g.convexHull[0].Y()+ScreenHeight/2),
+		1,
+		color.RGBA{0, 0, 0, 255},
+		true,
+	)
 }
 
 func (g *Game) Update() error {
 	mouseX, mouseY := ebiten.CursorPosition()
-	changed := false
+	mouseX -= ScreenWidth / 2
+	mouseY -= ScreenHeight / 2
 	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft) {
-		changed = true
 		g.plots = append(g.plots, NewPlot(mouseX, mouseY))
 	}
 
@@ -58,7 +77,6 @@ func (g *Game) Update() error {
 			if p.near(mouseX, mouseY) {
 				for i := range g.plots {
 					if g.plots[i].id == p.id {
-						changed = true
 						g.plots = append(g.plots[:i], g.plots[i+1:]...)
 						break
 					}
@@ -73,12 +91,18 @@ func (g *Game) Update() error {
 		g.plots = []*Plot{}
 		g.convexHull = []*Plot{}
 		plotID = 0
-		changed = true
 	}
 
-	if changed {
-		g.convexHull = graham.Scan(g.plots)
+	// move
+	for i := range g.plots {
+		p := g.plots[i]
+		p.VX -= float64(p.X()) * 0.0001
+		p.VY -= float64(p.Y()) * 0.0001
+		p.SetX(p.X() + int(p.VX))
+		p.SetY(p.Y() + int(p.VY))
 	}
+
+	g.convexHull = graham.Scan(g.plots)
 
 	for i := range g.plots {
 		g.plots[i].isConvex = false
@@ -116,6 +140,13 @@ func RunGame() {
 	g := NewGame()
 	ebiten.SetWindowSize(ScreenWidth, ScreenHeight)
 	ebiten.SetWindowTitle("Convex Hull Drawer")
+
+	for i := 0; i < 300; i++ {
+		p := NewPlot(rand.Intn(ScreenWidth)-ScreenWidth/2, rand.Intn(ScreenHeight)-ScreenHeight/2)
+		g.plots = append(g.plots, p)
+	}
+	g.convexHull = graham.Scan(g.plots)
+
 	if err := ebiten.RunGame(g); err != nil {
 		panic(err)
 	}

@@ -27,3 +27,9 @@ go run .
 [https://x.com/AtCoder8/status/1762758925932453901?s=20](https://x.com/AtCoder8/status/1762758925932453901?s=20)
 
 を参考にさせていただきました
+
+## wasm
+
+```
+env GOOS=js GOARCH=wasm go build -o main.wasm github.com/hamao0820/convexHull-drawer
+```
